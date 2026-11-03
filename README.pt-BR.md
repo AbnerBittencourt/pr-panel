@@ -101,9 +101,11 @@ O login do `gh` não é tocado.
 
 **Só 50 PRs.** O script busca até 50 PRs abertas e 50 pedidos de review.
 
+**Clicar numa PR não faz nada.** Só links `https://github.com/` são abertos, então o GitHub Enterprise Server ainda não é suportado.
+
 ## Privacidade
 
-Nada sai da sua máquina além das consultas GraphQL que o `gh` envia ao GitHub. Este projeto não guarda token nenhum: ele usa o armazenamento de credenciais do próprio `gh`.
+Nada sai da sua máquina além das consultas GraphQL que o `gh` envia ao GitHub. Este projeto não guarda token nenhum: ele usa o armazenamento de credenciais do próprio `gh`. O `panel.json` tem títulos de PRs privadas, por isso é gravado com permissão `0600` dentro de uma pasta `0700`.
 
 ## Estrutura do repositório
 

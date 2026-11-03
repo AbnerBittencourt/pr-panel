@@ -8,18 +8,26 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-const PANEL_FILE = GLib.build_filenamev([GLib.get_home_dir(), '.local/state/pr-panel/panel.json']);
+const PANEL_FILE = GLib.build_filenamev([GLib.get_user_state_dir(), 'pr-panel', 'panel.json']);
+// Só abre PRs do GitHub: o arquivo é local e não deve conseguir disparar file:// ou outros esquemas.
+const PR_URL = /^https:\/\/github\.com\/[^\s]+$/;
 const CI_COLORS = {FAILURE: '#ff7b63', PENDING: '#f5c211', SUCCESS: '#57e389', SKIPPED: '#9a9996'};
 const CI_PRIORITY = ['FAILURE', 'PENDING', 'SUCCESS'];
 const REVIEW_LABELS = {APPROVED: 'aprovada', CHANGES_REQUESTED: 'pediram mudanças'};
 const MAX_TITLE = 60;
 
 function dotStyle(ci) {
-    return `color: ${CI_COLORS[ci] ?? CI_COLORS.SKIPPED};`;
+    return `color: ${Object.hasOwn(CI_COLORS, ci) ? CI_COLORS[ci] : CI_COLORS.SKIPPED};`;
 }
 
 function shorten(title) {
-    return title.length > MAX_TITLE ? `${title.slice(0, MAX_TITLE - 1)}…` : title;
+    const text = String(title ?? '');
+    return text.length > MAX_TITLE ? `${text.slice(0, MAX_TITLE - 1)}…` : text;
+}
+
+function isPanel(panel) {
+    const isList = list => Array.isArray(list) && list.every(pr => pr && typeof pr === 'object');
+    return isList(panel?.mine) && isList(panel?.requested);
 }
 
 export default class PrPanelExtension extends Extension {
@@ -56,6 +64,8 @@ export default class PrPanelExtension extends Extension {
         } catch {
             return;
         }
+        if (!isPanel(panel))
+            return;
         const worst = CI_PRIORITY.find(ci => panel.mine.some(pr => pr.ci === ci));
         const reviews = panel.requested.length ? ` · ${panel.requested.length} review` : '';
         this._dot.visible = Boolean(worst);
@@ -90,7 +100,10 @@ export default class PrPanelExtension extends Extension {
             text: `${pr.repo} #${pr.number} — ${shorten(pr.title)}${suffix}`,
             y_align: Clutter.ActorAlign.CENTER,
         }));
-        item.connect('activate', () => Gio.AppInfo.launch_default_for_uri(pr.url, null));
+        if (typeof pr.url === 'string' && PR_URL.test(pr.url))
+            item.connect('activate', () => Gio.AppInfo.launch_default_for_uri(pr.url, null));
+        else
+            item.reactive = false;
         this._button.menu.addMenuItem(item);
     }
 }

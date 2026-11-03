@@ -101,9 +101,11 @@ Your `gh` login is left untouched.
 
 **Only 50 PRs.** The updater fetches up to 50 open PRs and 50 review requests.
 
+**Clicking a PR does nothing.** Only `https://github.com/` links are opened, so GitHub Enterprise Server is not supported yet.
+
 ## Privacy
 
-Nothing leaves your machine except the GraphQL queries `gh` sends to GitHub. No token is stored by this project: it relies on `gh`'s own credential storage.
+Nothing leaves your machine except the GraphQL queries `gh` sends to GitHub. No token is stored by this project: it relies on `gh`'s own credential storage. `panel.json` holds titles of private PRs, so it is written with `0600` permissions inside a `0700` folder.
 
 ## Repository layout
 

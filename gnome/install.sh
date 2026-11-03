@@ -42,7 +42,9 @@ check() {
 }
 
 install_all() {
-  local major gh_dir; major=$(shell_major); gh_dir=$(dirname "$(command -v gh)")
+  local major gh_dir; major=$(shell_major)
+  # Caminho absoluto, com % escapado: o systemd trata % como especificador no arquivo da unidade.
+  gh_dir=$(cd "$(dirname "$(command -v gh)")" && pwd); gh_dir=${gh_dir//%/%%}
   mkdir -p "$EXT_DIR" "$UNITS" "$(dirname "$BIN")"
   cp extension/extension.js "$EXT_DIR/"
   python3 - "$major" extension/metadata.json "$EXT_DIR/metadata.json" <<'PY'
@@ -59,7 +61,7 @@ Description=Atualiza o resumo de PRs do painel
 
 [Service]
 Type=oneshot
-Environment=PATH=$gh_dir:/usr/local/bin:/usr/bin:/bin
+Environment="PATH=$gh_dir:/usr/local/bin:/usr/bin:/bin"
 ExecStart=%h/.local/bin/pr-panel-update
 UNIT
   cat > "$UNITS/pr-panel.timer" <<UNIT

@@ -1,6 +1,6 @@
 ---
 description: Install and validate the GitHub PR indicator for the GNOME top bar
-allowed-tools: Bash(gnome/install.sh:*), Bash(gh auth status), Bash(gnome-shell --version), Bash(echo:*)
+allowed-tools: Bash(gnome/install.sh:*), Bash(gh auth status), Bash(gnome-shell --version)
 ---
 
 Install the PR indicator from this repository on the user's machine. Reply in the user's language, in short sentences.

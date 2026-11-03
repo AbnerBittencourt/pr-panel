@@ -63,9 +63,17 @@ def main():
         "mine": [{**summary(pr), "ci": ci_state(pr), "review": pr["reviewDecision"]} for pr in mine],
         "requested": [summary(pr) for pr in requested],
     }
-    PANEL_FILE.parent.mkdir(parents=True, exist_ok=True)
+    write_private(panel)
+
+
+def write_private(panel):
+    """Títulos de repositórios privados: pasta 0700 e arquivo 0600, independente da umask; troca atômica."""
+    PANEL_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    PANEL_FILE.parent.chmod(0o700)
     partial = PANEL_FILE.with_suffix(".tmp")
-    partial.write_text(json.dumps(panel))
+    with os.fdopen(os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        os.fchmod(f.fileno(), 0o600)
+        f.write(json.dumps(panel))
     partial.replace(PANEL_FILE)
 
 
