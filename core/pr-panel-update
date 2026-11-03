@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+"""Grava em ~/.local/state/pr-panel/panel.json as PRs abertas do usuário logado no gh. Roda via timer."""
+import datetime
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+STATE_HOME = pathlib.Path(os.environ.get("XDG_STATE_HOME", pathlib.Path.home() / ".local/state"))
+PANEL_FILE = STATE_HOME / "pr-panel/panel.json"
+FAILED_CONCLUSIONS = {"FAILURE", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"}
+
+QUERY = """
+query { mine: search(query: "is:open is:pr author:@me archived:false", type: ISSUE, first: 50) { nodes {
+  ... on PullRequest {
+    number title url reviewDecision repository { name }
+    commits(last: 1) { nodes { commit { statusCheckRollup { contexts(first: 100) { nodes {
+      ... on CheckRun { status conclusion } ... on StatusContext { state }
+    } } } } } }
+  }
+} }
+requested: search(query: "is:open is:pr review-requested:@me archived:false", type: ISSUE, first: 50) { nodes {
+  ... on PullRequest { number title url repository { name } }
+} } }"""
+
+
+def fetch():
+    """Com SSO pendente o gh sai com erro mas devolve o resto: mostra o PR que dá e avisa no stderr."""
+    result = subprocess.run(["gh", "api", "graphql", "-f", f"query={QUERY}"], capture_output=True, text=True)
+    if result.returncode:
+        print(f"pr-panel-update: {result.stderr.strip()}", file=sys.stderr)
+    data = json.loads(result.stdout or "{}").get("data")
+    if data is None:
+        sys.exit(1)
+    return [pr for pr in data["mine"]["nodes"] if pr], [pr for pr in data["requested"]["nodes"] if pr]
+
+
+def ci_state(pr):
+    """Estado pelos jobs: pipeline com mais jobs pulados que aprovados não conta como aprovado."""
+    rollup = pr["commits"]["nodes"][0]["commit"]["statusCheckRollup"] if pr["commits"]["nodes"] else None
+    if not rollup:
+        return None
+    nodes = rollup["contexts"]["nodes"]
+    results = [c.get("conclusion") or c.get("state") for c in nodes if c.get("status", "COMPLETED") == "COMPLETED"]
+    if len(results) < len(nodes) or "PENDING" in results:
+        return "PENDING"
+    if FAILED_CONCLUSIONS & set(results):
+        return "FAILURE"
+    if results.count("SKIPPED") > results.count("SUCCESS"):
+        return "SKIPPED"
+    return "SUCCESS"
+
+
+def summary(pr):
+    return {"repo": pr["repository"]["name"], "number": pr["number"], "title": pr["title"], "url": pr["url"]}
+
+
+def main():
+    mine, requested = fetch()
+    panel = {
+        "updated": datetime.datetime.now().strftime("%H:%M"),
+        "mine": [{**summary(pr), "ci": ci_state(pr), "review": pr["reviewDecision"]} for pr in mine],
+        "requested": [summary(pr) for pr in requested],
+    }
+    PANEL_FILE.parent.mkdir(parents=True, exist_ok=True)
+    partial = PANEL_FILE.with_suffix(".tmp")
+    partial.write_text(json.dumps(panel))
+    partial.replace(PANEL_FILE)
+
+
+if __name__ == "__main__":
+    main()

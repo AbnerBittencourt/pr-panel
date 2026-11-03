@@ -1,0 +1,9 @@
+{
+  "uuid": "pr-panel@abnerbittencourt.github.io",
+  "name": "PRs no painel",
+  "description": "Mostra na barra superior o estado do CI das suas PRs abertas no GitHub e os reviews pedidos a você.",
+  "shell-version": [
+    "46"
+  ],
+  "url": "https://github.com/AbnerBittencourt/pr-panel"
+}
