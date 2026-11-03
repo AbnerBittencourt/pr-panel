@@ -4,9 +4,7 @@
 
 Indicador na barra superior para as suas pull requests abertas no GitHub. Num olhar você sabe se algum CI está falhando, rodando ou verde, e um clique lista todas as PRs para abrir no navegador.
 
-```
-● PRs 5 · 1 review
-```
+<p align="center"><img src="docs/menu.png" alt="Menu do pr-panel na barra superior do GNOME" width="572"></p>
 
 - A bolinha mostra o pior estado de CI entre as suas PRs abertas: **vermelha** se algum falhou, **amarela** se algum está rodando, **verde** se todos passaram.
 - `· N review` aparece quando alguém pediu o seu review.

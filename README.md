@@ -4,9 +4,7 @@
 
 A top-bar indicator for your open GitHub pull requests. One glance tells you whether any CI is failing, still running or green, and a click lists every PR so you can open it in the browser.
 
-```
-● PRs 5 · 1 review
-```
+<p align="center"><img src="docs/menu.png" alt="pr-panel menu in the GNOME top bar" width="572"></p>
 
 - The dot shows the worst CI state across your open PRs: **red** if any failed, **yellow** if any is running, **green** if all passed.
 - `· N review` appears when someone has requested your review.
